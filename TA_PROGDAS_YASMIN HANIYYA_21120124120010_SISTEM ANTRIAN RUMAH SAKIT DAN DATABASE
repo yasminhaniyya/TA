@@ -1,7 +1,4 @@
 <?php
-session_start(); // Memulai sesi PHP
-$gambar = 'latarbelakang.png';
-// Kelas Antrian dengan <?php
 session_start();
 $gambar = 'latarbelakang.png';
 
@@ -9,10 +6,10 @@ class Antrian {
     private $queue = [];
 
     public function tambahAntrian($nama, $gender, $dokter) {
-        $lastNumber = 1; //kalau belum ada antiran, dia jadi nomer 1 
+        $lastNumber = 1;
         foreach ($this->queue as $data) {
             if ($data['dokter'] === $dokter) {
-                $lastNumber = $data['nomor'] + 1; //kalau udah ada antrian nanti lastnumbernya yang terakhir +1
+                $lastNumber = $data['nomor'] + 1;
             }
         }
 
@@ -26,26 +23,15 @@ class Antrian {
         return $data["nomor"];
     }
 
-    public function hapusAntrian($nomor) {
-        foreach ($this->queue as $key => $data) {
-            if ($data['nomor'] == $nomor) {
-                unset($this->queue[$key]);
-                $this->queue = array_values($this->queue);
-                return true;
-            }
-        }
-        return false;
-    }
-
     public function tampilkanAntrian() {
         $dokterAntrian = [];
         foreach ($this->queue as $data) {
             $dokterAntrian[$data['dokter']][] = $data;
         }
 
-        echo "<table border='1' style='width:100%; text-align:center;'>
-                <tr><th>Dokter</th><th>Nomor Antrian</th><th>Nama</th><th>Jenis Kelamin</th><th>Aksi</th></tr>";
-//ngelompokin ke tabel setiap dokter
+        echo "<table border='1' style='width:100%; text-align:left; margin-top: 20px;'>
+                <tr><th>Dokter</th><th>Nomor Antrian</th><th>Nama</th><th>Jenis Kelamin</th></tr>";
+
         foreach ($dokterAntrian as $dokter => $list) {
             foreach ($list as $antrian) {
                 $nomor = $antrian["nomor"];
@@ -54,12 +40,6 @@ class Antrian {
                         <td>$nomor</td>
                         <td>{$antrian['nama']}</td>
                         <td>{$antrian['gender']}</td>
-                        <td>
-                            <form method='post' style='display:inline;'>
-                                <input type='hidden' name='nomor_hapus' value='$nomor'>
-                                <button type='submit' name='hapus' class='button'>Hapus</button>
-                            </form>
-                        </td>
                       </tr>";
             }
         }
@@ -74,13 +54,16 @@ class Antrian {
 
 function renderInput($label, $name, $type = "text", $options = []) {
     if ($type === "select") {
-        $html = "<label>$label <select name='$name' required>";
+        $html = "<label style='display: block; margin-bottom: 10px;'>$label 
+                    <select name='$name' required>
+                        <option value='' disabled selected>Pilih</option>";
         foreach ($options as $value => $text) {
             $html .= "<option value='$value'>$text</option>";
         }
-        $html .= "</select></label><br><br>";
+        $html .= "</select></label>";
     } else {
-        $html = "<label>$label <input type='$type' name='$name' required></label><br><br>";
+        $html = "<label style='display: block; margin-bottom: 10px;'>$label 
+                    <input type='$type' name='$name' required></label>";
     }
     return $html;
 }
@@ -92,6 +75,22 @@ function showMessage($message, $color = "black") {
 $antrian = new Antrian();
 $antrian->queue($_SESSION['antrian'] ?? []);
 
+if (isset($_POST['login'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    if ($username === "ibnuabbas" && $password === "sukses") {
+        $_SESSION['is_logged_in'] = true;
+    } else {
+        showMessage("Username atau password salah!", "red");
+    }
+}
+
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
+
 if (isset($_POST['daftar'])) {
     $nama = $_POST['nama'];
     $gender = $_POST['gender'];
@@ -101,29 +100,6 @@ if (isset($_POST['daftar'])) {
     $_SESSION['antrian'] = $antrian->queue();
     showMessage("Anda mendapatkan antrian nomor: $nomorAntrian untuk dokter $dokter.");
 }
-
-if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    if ($username === "rumahsakit" && $password === "sukses") {
-        $_SESSION['is_logged_in'] = true;
-    } else {
-        showMessage("Username atau password salah!", "red");
-    }
-}
-
-if (isset($_POST['logout'])) {
-    unset($_SESSION['is_logged_in']);
-    showMessage("Anda telah logout.");
-}
-
-if (isset($_POST['hapus'])) {
-    $nomorHapus = $_POST['nomor_hapus'];
-    $antrian->hapusAntrian($nomorHapus);
-    $_SESSION['antrian'] = $antrian->queue();
-    showMessage("Nomor antrian $nomorHapus telah dihapus.");
-}
-
 ?>
 
 <!DOCTYPE html>
@@ -134,264 +110,87 @@ if (isset($_POST['hapus'])) {
     <title>Rumah Sakit</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; background-color: #ddedea; }
-        .container { margin-top: 50px; }
-        .antrian-box { background-color: #a0ced9; color: white; padding: 20px; border-radius: 10px; width: 300px; margin: 0 auto; position: relative; }
-        .button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        .login-btn { position: absolute; bottom: 10px; right: 10px; }
-        .login-box { margin-top: 20px; padding: 20px; background-color: #e0e0e0; border-radius: 10px; width: 300px; margin: 0 auto; }
-        table { margin: 20px auto; border-collapse: collapse; width: 80%; }
+        .container { margin-top: 50px; text-align: left; width: 80%; margin: auto; }
+        .antrian-box, .login-box { background-color: #a0ced9; color: white; padding: 20px; border-radius: 10px; }
+        .button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        table { margin: 20px auto; border-collapse: collapse; width: 100%; }
         th, td { padding: 10px; border: 1px solid black; }
         body {
             background-image: url('<?php echo $gambar; ?>');
             background-size: cover;
             background-repeat: no-repeat;
         }
+        .antrian-box {
+            width: 300px; /* Box tetap kotak */
+            height: 180px; /* Kotak dengan tinggi sama */
+            margin: auto; /* Menjaga agar tetap di tengah */
+        }
+        .login-box {
+            background-color: #a0ced9;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px; /* Lebar box login */
+            margin: 150px auto 20px; /* Posisikan box di tengah secara vertikal dan horizontal */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Menjaga jarak antar elemen dalam box */
+            height: 150px; /* Setel tinggi login-box */
+        }
+        button[type="submit"] {
+            padding: 5px 15px; /* Mengurangi padding untuk tombol lebih kecil */
+            font-size: 14px; /* Menyesuaikan ukuran font untuk tombol lebih kecil */
+            height: auto; /* Memastikan tinggi tombol otomatis menyesuaikan ukuran font dan padding */
+        }
+        .centered-header {
+    position: absolute;
+    top: 10px; /* Mengatur jarak dari atas */
+    left: 50%; /* Posisi di tengah secara horizontal */
+    transform: translateX(-50%); /* Mengoreksi posisi supaya tepat di tengah */
+    text-align: center;
+    font-size: 30px; /* Ukuran font lebih besar */
+    color: #000; /* Warna teks */
+    padding: 10px 20px; /* Padding untuk keindahan */
+    border-radius: 8px; /* Sudut yang melengkung */
+}
+
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Selamat Datang di Rumah Sakit Ibnu Abbas!</h1>
-    <div class="antrian-box">
-        <h2>Antrian Rumah Sakit</h2>
-        <form method="post">
-            <?= renderInput("Nama:", "nama") ?>
-            <?= renderInput("Jenis Kelamin:", "gender", "select", ["Laki-laki" => "Laki-laki", "Perempuan" => "Perempuan"]) ?>
-            <?= renderInput("Pilih Dokter:", "dokter", "select", ["Umum" => "Umum", "Gigi" => "Gigi", "Mata" => "Mata"]) ?>
-            <button type="submit" name="daftar" class="button">Daftar</button>
-        </form>
-        <form method="post" style="display:inline;">
-            <button type="submit" name="show_login" class="button login-btn">Login</button>
-        </form>
-    </div>
+<?php if (!($_SESSION['is_logged_in'] ?? false)): ?>
+    <h1 class="centered-header">Selamat Datang di Rumah Sakit Ibnu Abbas!</h1>
+<?php endif; ?>
 
-    <?php if (isset($_POST['show_login'])): ?>
+    <?php if (!($_SESSION['is_logged_in'] ?? false)): ?>
         <div class="login-box">
-            <h2>Login Database</h2>
+            <h2>Login untuk Mendaftar</h2>
             <form method="post">
                 <?= renderInput("Username:", "username") ?>
                 <?= renderInput("Password:", "password", "password") ?>
-                <button type="submit" name="login" class="button">Login</button>
+                <button type="submit" name="login" class="button" style="float: center" >Login</button>
+            </form>
+        </div>
+    <?php else: ?>
+        <div class="antrian-box">
+            <h2>Antrian Rumah Sakit</h2>
+            <div class="form-container">
+                <form method="post">
+                    <?= renderInput("Nama:", "nama") ?>
+                    <?= renderInput("Jenis Kelamin:", "gender", "select", ["Laki-laki" => "Laki-laki", "Perempuan" => "Perempuan"]) ?>
+                    <?= renderInput("Pilih Dokter:", "dokter", "select", ["Umum" => "Umum", "Gigi" => "Gigi", "Mata" => "Mata"]) ?>
+                    <button type="submit" name="daftar" class="button form-button">Daftar</button>
+                </form>
+            </div>
+        </div>
+        <div>
+            <h2>Database Antrian</h2>
+            <?php $antrian->tampilkanAntrian(); ?>
+            <form method="post" style="text-align: center;">
+                <button type="submit" name="logout" class="button">Logout</button>
             </form>
         </div>
     <?php endif; ?>
-
-    <?php
-    if ($_SESSION['is_logged_in'] ?? false) {
-        echo "<div style='text-align:center;'><hr>";
-        echo "<h2>Database Antrian</h2>";
-        $antrian->tampilkanAntrian();
-        echo "<form method='post' style='margin-top: 20px;'>";
-        echo "<button type='submit' name='logout' class='button'>Logout</button>";
-        echo "</form></div>";
-    }
-    ?>
 </div>
 </body>
 </html>
-
-class Antrian {
-    private $queue = [];
-    private $counter = 1;
-
-    public function tambahAntrian($nama, $gender, $dokter) {
-        // Cek antrian terakhir untuk dokter yang sama
-        $lastNumber = 1;
-        foreach ($this->queue as $data) {
-            if (isset($data['dokter']) && $data['dokter'] === $dokter) {
-                $lastNumber = $data['nomor'] + 1;
-            }
-        }
-    
-        $data = [
-            "nomor" => $lastNumber,
-            "nama" => $nama,
-            "gender" => $gender,
-            "dokter" => $dokter
-        ];
-        array_push($this->queue, $data);
-        return $data["nomor"];
-    }
-    
-    public function hapusAntrian($nomor) {
-        foreach ($this->queue as $key => $data) {
-            if ($data['nomor'] == $nomor) {
-                unset($this->queue[$key]);
-                // Reindex array setelah penghapusan
-                $this->queue = array_values($this->queue);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public function tampilkanAntrian() {
-        $dokterAntrian = [];
-        foreach ($this->queue as $data) {
-            if (isset($data['dokter'])) {
-                $dokterAntrian[$data['dokter']][] = $data;
-            }
-        }
-    
-        echo "<table border='1' style='width:100%; text-align:center;'>";
-        echo "<tr><th>Dokter</th><th>Nomor Antrian</th><th>Nama</th><th>Jenis Kelamin</th><th>Aksi</th></tr>";
-        
-        foreach ($dokterAntrian as $dokter => $list) {
-            foreach ($list as $antrian) {
-                $nomor = $antrian["nomor"] ?? "N/A";
-                $nama = $antrian["nama"] ?? "N/A";
-                $gender = $antrian["gender"] ?? "N/A";
-                
-                echo "<tr>";
-                echo "<td>$dokter</td>";
-                echo "<td>$nomor</td>";
-                echo "<td>$nama</td>";
-                echo "<td>$gender</td>";
-                echo "<td>";
-                echo "<form method='post' style='display:inline;'>";
-                echo "<input type='hidden' name='nomor_hapus' value='$nomor'>";
-                echo "<button type='daftar' name='hapus' class='button'>Hapus</button>";
-                echo "</form>";
-                echo "</td>";
-                echo "</tr>";
-            }
-        }
-        echo "</table>";
-    }
-    
-    // Setter dan Getter untuk mengakses antrian
-    public function setQueue($queue) {
-        $this->queue = $queue;
-    }
-
-    public function getQueue() {
-        return $this->queue;
-    }
-}
-
-// Inisialisasi objek antrian dari sesi jika tersedia
-$antrian = new Antrian();
-if (isset($_SESSION['antrian'])) {
-    $antrian->setQueue($_SESSION['antrian']);
-}
-
-// Menangani form antrian
-if (isset($_POST['daftar'])) {
-    $nama = $_POST['nama'];
-    $gender = $_POST['gender'];
-    $dokter = $_POST['dokter'];
-    
-    // Tambahkan antrian
-    $nomorAntrian = $antrian->tambahAntrian($nama, $gender, $dokter);
-    $_SESSION['antrian'] = $antrian->getQueue(); // Simpan antrian ke sesi
-    echo "<p>Anda mendapatkan antrian nomor: $nomorAntrian untuk dokter $dokter.</p>";
-}
-
-// Menangani form login
-$showLoginForm = isset($_POST['show_login']); // Kondisi untuk menampilkan form login
-if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-
-    // Validasi login (sederhana
-        // Validasi login (sederhana)
-        if ($username == "rumahsakit" && $password == "sukses") {
-            $_SESSION['is_logged_in'] = true;
-        } else {
-            echo "<p style='color:red;'>Username atau password salah!</p>";
-        }
-    }
-    
-    // Menangani logout
-    if (isset($_POST['logout'])) {
-        unset($_SESSION['is_logged_in']); // Menghapus sesi login
-        echo "<p>Anda telah logout.</p>";
-    }
-    
-    // Menangani penghapusan antrian
-    if (isset($_POST['hapus'])) {
-        $nomorHapus = $_POST['nomor_hapus'];
-        $antrian->hapusAntrian($nomorHapus);
-        $_SESSION['antrian'] = $antrian->getQueue(); // Simpan antrian yang telah diperbarui ke sesi
-        echo "<p>Nomor antrian $nomorHapus telah dihapus.</p>";
-    }
-    ?>
-    
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Rumah Sakit</title>
-        <style>
-            body { text-align: center; font-family: Arial, sans-serif; background-color: #ddedea; }
-            .container { margin-top: 50px; }
-            .antrian-box { background-color: #a0ced9; color: white; padding: 20px; border-radius: 10px; width: 300px; margin: 0 auto; position: relative; }
-            .button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-            .login-btn { position: absolute; bottom: 10px; right: 10px; }
-            .login-box { margin-top: 20px; padding: 20px; background-color: #e0e0e0; border-radius: 10px; width: 300px; margin: 0 auto; }
-            table { margin: 20px auto; border-collapse: collapse; width: 80%; }
-            th, td { padding: 10px; border: 1px solid black; }
-            body {
-            background-image: url('<?php echo $gambar; ?>');
-            background-size: cover;
-            background-repeat: no-repeat;
-        }
-        </style>
-    </head>
-    <body>
-        
-    <div class="container">
-        <h1>Selamat Datang di Rumah Sakit Ibnu Abbas!</h1>
-        
-        <div class="antrian-box">
-            <h2>Antrian Rumah Sakit</h2>
-            <form method="post">
-                Nama: <input type="text" name="nama" required><br><br>
-                Jenis Kelamin:
-                <select name="gender" required>
-                    <option value="Laki-laki">Laki-laki</option>
-                    <option value="Perempuan">Perempuan</option>
-                </select><br><br>
-                Pilih Dokter:
-                <select name="dokter" required>
-                    <option value="Umum">Umum</option>
-                    <option value="Gigi">Gigi</option>
-                    <option value="Mata">Mata</option>
-                </select><br><br>
-                <button type="daftar" name="daftar" class="button">Daftar</button>
-            </form>
-    
-            <!-- Tombol Login di sudut kanan bawah kotak antrian -->
-            <form method="post" style="display:inline;">
-                <button type="daftar" name="show_login" class="button login-btn">Login</button>
-            </form>
-        </div>
-    
-        <!-- Form Login akan muncul setelah tombol login diklik -->
-        <?php if ($showLoginForm): ?>
-        <div class="login-box">
-            <h2>Login Database</h2>
-            <form method="post">
-                Username: <input type="text" name="username" required><br><br>
-                Password: <input type="password" name="password" required><br><br>
-                <button type="daftar" name="login" class="button">Login</button>
-            </form>
-        </div>
-        <?php endif; ?>
-    
-        <!-- Tampilkan Database Antrian Jika Login Berhasil -->
-        <?php
-        if (isset($_SESSION['is_logged_in']) && $_SESSION['is_logged_in'] === true) {
-            echo "<div style='text-align:center;'><hr>";
-            echo "<h2>Database Antrian</h2>";
-            $antrian->tampilkanAntrian();
-            echo "<form method='post' style='margin-top: 20px;'>";
-            echo "<button type='daftar' name='logout' class='button'>Logout</button>";
-            echo "</form>";
-            echo "</div>";
-        }
-        ?>
-    </div>
-    
-    </body>
-    </html>    
